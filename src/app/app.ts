@@ -40,13 +40,14 @@ export class App implements OnInit {
   readonly showBooking = signal(false);
   readonly showClient = signal(false);
   readonly showCourt = signal(false);
+  readonly editingCourtId = signal<number | null>(null);
   readonly selectedCourt = computed(() => this.canchas().find((court) => court.id === Number(this.canchaId())));
   readonly confirmedCount = computed(() => this.reservas().filter((r) => r.estado === 'CONFIRMADA').length);
   readonly pendingCount = computed(() => this.reservas().filter((r) => r.estado === 'PENDIENTE').length);
   readonly adminName = this.auth.nombre;
   readonly bookingForm = this.fb.nonNullable.group({ canchaId: [null as number | null, Validators.required], usuarioId: [null as number | null, Validators.required], fecha: [this.today, Validators.required], horaInicio: ['18:00', Validators.required], horaFin: ['19:00', Validators.required], observaciones: [''] }, { validators: validBookingRange });
   readonly clientForm = this.fb.nonNullable.group({ nombre: ['', [Validators.required, Validators.maxLength(100)]], email: ['', [Validators.required, Validators.email, Validators.maxLength(150)]], telefono: ['', Validators.maxLength(30)] });
-  readonly courtForm = this.fb.nonNullable.group({ nombre: ['', [Validators.required, Validators.maxLength(100)]], direccion: ['', [Validators.required, Validators.maxLength(150)]], tipoSuperficie: ['Césped sintético', Validators.maxLength(30)], capacidadJugadores: [10, [Validators.required, Validators.min(2), Validators.max(30)]], precioPorHora: [35000, [Validators.required, Validators.min(1)]] });
+  readonly courtForm = this.fb.nonNullable.group({ nombre: ['', [Validators.required, Validators.maxLength(100)]], direccion: ['', [Validators.required, Validators.maxLength(150)]], tipoSuperficie: ['Césped sintético', Validators.maxLength(30)], capacidadJugadores: [10, [Validators.required, Validators.min(2), Validators.max(30)]], precioPorHora: [35000, [Validators.required, Validators.min(1)]], horaApertura: ['08:00', Validators.required], horaCierre: ['23:00', Validators.required] });
 
   ngOnInit(): void { if (isPlatformBrowser(this.platformId)) this.loadBase(); }
 
@@ -96,15 +97,41 @@ export class App implements OnInit {
   createCourt(): void {
     this.courtForm.markAllAsTouched();
     if (this.courtForm.invalid) return;
+    const data = this.courtForm.getRawValue();
+    if (data.horaCierre <= data.horaApertura) {
+      this.courtForm.controls.horaCierre.setErrors({ invalidRange: true });
+      return;
+    }
     this.error.set(''); this.notice.set('');
-    this.api.crearCancha(this.courtForm.getRawValue()).subscribe({
-      next: (created) => {
-        this.canchas.update((courts) => [...courts, created]); this.canchaId.set(created.id); this.bookingForm.controls.canchaId.setValue(created.id);
-        this.courtForm.reset({ nombre: '', direccion: '', tipoSuperficie: 'Césped sintético', capacidadJugadores: 10, precioPorHora: 35000 });
-        this.showCourt.set(false); this.notice.set('Cancha creada. Ya podés agendar turnos.'); this.loadReservations();
+    const editingId = this.editingCourtId();
+    const save = editingId ? this.api.actualizarCancha(editingId, data) : this.api.crearCancha(data);
+    save.subscribe({
+      next: (saved) => {
+        if (editingId) this.canchas.update((courts) => courts.map((court) => court.id === saved.id ? saved : court));
+        else this.canchas.update((courts) => [...courts, saved]);
+        this.canchaId.set(saved.id); this.bookingForm.controls.canchaId.setValue(saved.id);
+        this.resetCourtForm();
+        this.showCourt.set(false); this.notice.set(editingId ? 'Cancha y horario actualizados.' : 'Cancha creada. Ya podés agendar turnos.'); this.loadReservations();
       },
       error: (err: HttpErrorResponse) => this.error.set(this.errorMessage(err)),
     });
+  }
+
+  openCourtForm(court?: Cancha): void {
+    this.editingCourtId.set(court?.id ?? null);
+    this.courtForm.reset(court ? {
+      nombre: court.nombre, direccion: court.direccion, tipoSuperficie: court.tipoSuperficie ?? '',
+      capacidadJugadores: court.capacidadJugadores, precioPorHora: court.precioPorHora,
+      horaApertura: court.horaApertura?.slice(0, 5) ?? '08:00', horaCierre: court.horaCierre?.slice(0, 5) ?? '23:00',
+    } : { nombre: '', direccion: '', tipoSuperficie: 'Césped sintético', capacidadJugadores: 10, precioPorHora: 35000, horaApertura: '08:00', horaCierre: '23:00' });
+    this.showCourt.set(true);
+  }
+
+  closeCourtForm(): void { this.showCourt.set(false); this.resetCourtForm(); }
+
+  private resetCourtForm(): void {
+    this.editingCourtId.set(null);
+    this.courtForm.reset({ nombre: '', direccion: '', tipoSuperficie: 'Césped sintético', capacidadJugadores: 10, precioPorHora: 35000, horaApertura: '08:00', horaCierre: '23:00' });
   }
 
   createBooking(): void {

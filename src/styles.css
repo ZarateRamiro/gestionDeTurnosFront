@@ -7,3 +7,5 @@
 .court-label-row{display:flex;align-items:center;justify-content:space-between}.court-label-row button{width:21px;height:21px;border:0;border-radius:5px;background:#29453a;color:#cde9a2;font-size:16px;line-height:1;cursor:pointer}.sidebar .sidebar-empty{width:100%;border:1px dashed #496258;border-radius:7px;background:transparent;text-align:left;color:#b5c9bd;padding:9px 10px;font:inherit;font-size:10px;cursor:pointer}.sidebar .sidebar-empty:hover{background:#203c32;color:#d8efa9}
 .logout-button{border:1px solid #e9eee9;border-radius:6px;background:#fff;color:#647169;padding:6px 9px;font-size:9px;cursor:pointer}.logout-button:hover{background:#f5f7f3}
 
+.court-banner .secondary-button{padding:8px 10px;white-space:nowrap}
+@media(max-width:760px){.court-banner{flex-wrap:wrap}.court-banner .secondary-button{margin-left:auto}}

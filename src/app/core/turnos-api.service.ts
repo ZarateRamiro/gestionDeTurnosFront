@@ -17,8 +17,11 @@ export class TurnosApiService {
   crearCliente(cliente: { nombre: string; email: string; telefono: string }) {
     return this.http.post<Cliente>(`${this.base}/clientes`, cliente);
   }
-  crearCancha(cancha: { nombre: string; direccion: string; tipoSuperficie: string; capacidadJugadores: number; precioPorHora: number }) {
+  crearCancha(cancha: { nombre: string; direccion: string; tipoSuperficie: string; capacidadJugadores: number; precioPorHora: number; horaApertura: string; horaCierre: string }) {
     return this.http.post<Cancha>(`${this.base}/canchas`, cancha);
+  }
+  actualizarCancha(id: number, cancha: { nombre: string; direccion: string; tipoSuperficie: string; capacidadJugadores: number; precioPorHora: number; horaApertura: string; horaCierre: string }) {
+    return this.http.put<Cancha>(`${this.base}/canchas/${id}`, cancha);
   }
   crearReserva(reserva: { canchaId: number; usuarioId: number; fecha: string; horaInicio: string; horaFin: string; observaciones: string }) {
     return this.http.post<Reserva>(`${this.base}/reservas`, reserva);

@@ -1,6 +1,6 @@
 # Frontend de Gestión de Turnos
 
-Panel de administración realizado con Angular 22 y standalone components. Incluye login, agenda por cancha y fecha, alta de canchas y clientes, reservas y cancelaciones.
+Aplicación Angular 22 con componentes standalone. Incluye login por rol, registro de clientes, catálogo público de canchas, consulta de disponibilidad y solicitud de turnos; el administrador gestiona horarios de atención, agenda, clientes y reservas.
 
 ## Requisitos y ejecución
 
