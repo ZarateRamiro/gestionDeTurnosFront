@@ -21,6 +21,7 @@ function validBookingRange(control: AbstractControl): ValidationErrors | null {
   imports: [CommonModule, FormsModule, ReactiveFormsModule],
   templateUrl: './app.html',
 })
+/** Panel del administrador: carga datos y coordina formularios y acciones de gestión. */
 export class App implements OnInit {
   private readonly api = inject(TurnosApiService);
   private readonly fb = inject(FormBuilder);
@@ -28,6 +29,7 @@ export class App implements OnInit {
   private readonly router = inject(Router);
   private readonly platformId = inject(PLATFORM_ID);
 
+  // Signals son el estado reactivo de la pantalla; computed deriva valores sin duplicar estado.
   readonly today = this.dateKey(new Date());
   readonly canchas = signal<Cancha[]>([]);
   readonly clientes = signal<Cliente[]>([]);
@@ -45,10 +47,12 @@ export class App implements OnInit {
   readonly confirmedCount = computed(() => this.reservas().filter((r) => r.estado === 'CONFIRMADA').length);
   readonly pendingCount = computed(() => this.reservas().filter((r) => r.estado === 'PENDIENTE').length);
   readonly adminName = this.auth.nombre;
+  // FormBuilder define controles y validaciones antes de enviar datos al servicio HTTP.
   readonly bookingForm = this.fb.nonNullable.group({ canchaId: [null as number | null, Validators.required], usuarioId: [null as number | null, Validators.required], fecha: [this.today, Validators.required], horaInicio: ['18:00', Validators.required], horaFin: ['19:00', Validators.required], observaciones: [''] }, { validators: validBookingRange });
   readonly clientForm = this.fb.nonNullable.group({ nombre: ['', [Validators.required, Validators.maxLength(100)]], email: ['', [Validators.required, Validators.email, Validators.maxLength(150)]], telefono: ['', Validators.maxLength(30)] });
   readonly courtForm = this.fb.nonNullable.group({ nombre: ['', [Validators.required, Validators.maxLength(100)]], direccion: ['', [Validators.required, Validators.maxLength(150)]], tipoSuperficie: ['Césped sintético', Validators.maxLength(30)], capacidadJugadores: [10, [Validators.required, Validators.min(2), Validators.max(30)]], precioPorHora: [35000, [Validators.required, Validators.min(1)]], horaApertura: ['08:00', Validators.required], horaCierre: ['23:00', Validators.required] });
 
+  // La API se consulta en navegador; la comprobación evita llamadas durante el render SSR.
   ngOnInit(): void { if (isPlatformBrowser(this.platformId)) this.loadBase(); }
 
   loadBase(): void {

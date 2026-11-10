@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { roleGuard } from './core/auth.guard';
 
+// loadComponent divide las pantallas en chunks y las descarga al navegar a cada ruta.
 export const routes: Routes = [
   { path: 'login', loadComponent: () => import('./pages/login/login').then((m) => m.LoginPage) },
   { path: 'registro', loadComponent: () => import('./pages/registro/registro').then((m) => m.RegistroPage) },

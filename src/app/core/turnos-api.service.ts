@@ -2,9 +2,11 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Cancha, Cliente, HorarioDisponible, Reserva } from './models';
 
+/** Único punto de acceso HTTP a la API de turnos; los componentes solo consumen estos métodos. */
 @Injectable({ providedIn: 'root' })
 export class TurnosApiService {
   private readonly http = inject(HttpClient);
+  // Ruta relativa para que el proxy de Angular reenvíe /api al backend local.
   private readonly base = '/api/v1';
   canchas() { return this.http.get<Cancha[]>(`${this.base}/canchas`); }
   disponibilidad(canchaId: number, fecha: string, duracionHoras: number) { return this.http.get<HorarioDisponible[]>(`${this.base}/disponibilidad`, { params: { canchaId, fecha, duracionHoras } }); }

@@ -1,0 +1,48 @@
+<main class="login-page">
+  <!-- Tarjeta de autenticación del administrador o cliente. -->
+  <section class="login-card">
+    <a class="login-brand" href="/"
+      ><span class="brand-mark">PJ</span
+      ><span><strong>punto de juego</strong><small>GESTIÓN DEPORTIVA</small></span></a
+    >
+    <div class="login-intro">
+      <span class="eyebrow">PANEL DE ADMINISTRACIÓN</span>
+      <h1>Qué bueno verte</h1>
+      <p>Ingresá con tu cuenta para administrar los turnos.</p>
+    </div>
+    @if (error()) {
+      <div class="login-error" role="alert">{{ error() }}</div>
+    }
+    <!-- Reactive Forms valida los datos y submit delega el acceso a AuthService. -->
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <label
+        >Correo electrónico<input
+          type="email"
+          formControlName="email"
+          autocomplete="username"
+          placeholder="admin@tucancha.com"
+          [class.invalid]="showError('email')"
+      /></label>
+      @if (showError('email')) {
+        <small class="field-error">Ingresá un correo válido.</small>
+      }
+      <label
+        >Contraseña<input
+          type="password"
+          formControlName="password"
+          autocomplete="current-password"
+          placeholder="Tu contraseña"
+          [class.invalid]="showError('password')"
+      /></label>
+      @if (showError('password')) {
+        <small class="field-error">La contraseña es obligatoria.</small>
+      }
+      <button class="login-submit" type="submit" [disabled]="form.invalid || loading()">
+        {{ loading() ? 'Ingresando…' : 'Ingresar al panel' }}
+      </button>
+    </form>
+    <p class="login-hint">
+      ¿Querés reservar una cancha? <a routerLink="/registro">Creá tu cuenta</a>
+    </p>
+  </section>
+</main>

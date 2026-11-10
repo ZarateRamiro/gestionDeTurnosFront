@@ -8,21 +8,125 @@ import { AuthService } from '../../core/auth.service';
 import { Cancha, HorarioDisponible, Reserva } from '../../core/models';
 import { TurnosApiService } from '../../core/turnos-api.service';
 
-@Component({standalone:true,selector:'app-cliente-turnos',imports:[CommonModule,ReactiveFormsModule],template:`
-<main class="page"><header><a class="brand" href="/turnos"><b>PJ</b><span><strong>punto de juego</strong><small>RESERVAS DEPORTIVAS</small></span></a><div>Hola, {{auth.nombre()}} <button class="light" (click)="logout()">Salir</button></div></header><section class="content"><span class="eyebrow">RESERVAS ONLINE</span><h1>Encontrá tu próximo turno</h1><p class="muted">Elegí cancha, fecha y duración para consultar los horarios disponibles.</p>
-@if(error()){<div class="alert error" role="alert">{{error()}}</div>}@if(notice()){<div class="alert success" role="status">{{notice()}}</div>}
-<section class="panel"><form class="filters" [formGroup]="form" (ngSubmit)="buscar()"><label>Cancha<select formControlName="canchaId"><option [ngValue]="null" disabled>Elegí una cancha</option>@for(c of canchas();track c.id){<option [ngValue]="c.id">{{c.nombre}} · &#36;{{c.precioPorHora|number:'1.0-0'}}/hora</option>}</select></label><label>Fecha<input type="date" formControlName="fecha" [min]="today"></label><label>Duración<select formControlName="duracionHoras"><option [ngValue]="1">1 hora</option><option [ngValue]="2">2 horas</option><option [ngValue]="3">3 horas</option></select></label><button [disabled]="form.invalid||loading()">{{loading()?'Buscando…':'Ver horarios'}}</button></form>
-@if(cargandoCanchas()){<p class="empty">Cargando canchas…</p>}@else if(!canchas().length){<p class="empty">Todavía no hay canchas activas. El administrador debe cargar una cancha para habilitar reservas.</p>}@if(busquedaRealizada()&&horarios().length){<h2>Horarios disponibles</h2><div class="slots">@for(s of horarios();track s.horaInicio){<button class="slot" [disabled]="solicitando()" (click)="solicitar(s)"><strong>{{s.horaInicio.slice(0,5)}} – {{s.horaFin.slice(0,5)}}</strong><span>&#36;{{s.precioTotal|number:'1.0-0'}}</span><small>{{solicitando()?'Enviando…':'Solicitar turno'}}</small></button>}</div>}@if(busquedaRealizada()&&!horarios().length&&!loading()){<p class="empty">No hay horarios libres. Probá otra fecha o duración.</p>}</section>
-<section class="panel"><div class="history-head"><div><h2>Mis turnos</h2><p class="muted">Solicitudes realizadas con tu cuenta.</p></div><button class="light" (click)="cargarReservas()">Actualizar</button></div>@if(cargandoReservas()){<p class="empty">Cargando tus turnos…</p>}@else if(!reservas().length){<p class="empty">Todavía no solicitaste ningún turno.</p>}@else{<div class="table-wrap"><table><thead><tr><th>CANCHA</th><th>FECHA</th><th>HORARIO</th><th>IMPORTE</th><th>ESTADO</th></tr></thead><tbody>@for(r of reservas();track r.id){<tr><td>{{r.cancha}}</td><td>{{r.fecha}}</td><td>{{r.horaInicio.slice(0,5)}} – {{r.horaFin.slice(0,5)}}</td><td>&#36;{{r.precioTotal|number:'1.0-0'}}</td><td><span class="status" [class.cancelled]="r.estado==='CANCELADA'">{{r.estado==='PENDIENTE'?'Pendiente':r.estado==='CONFIRMADA'?'Confirmado':'Cancelado'}}</span></td></tr>}</tbody></table></div>}</section></section></main>`,styles:[`:host{display:block;min-height:100vh;background:#f4f7f2;color:#20352b}.page{max-width:1080px;margin:auto;padding:0 24px 50px}header{height:76px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e5ebe3;font-size:12px}.brand{display:flex;align-items:center;gap:11px;color:#20352b;text-decoration:none}.brand b{width:38px;height:38px;border-radius:12px;background:#b8e469;display:grid;place-items:center}.brand strong,.brand small{display:block}.brand strong{font-size:14px}.brand small{margin-top:4px;color:#91a59c;font-size:8px;letter-spacing:1.2px}.content{max-width:850px;margin:42px auto}.eyebrow{font-size:10px;font-weight:800;letter-spacing:1.4px;color:#7b9c56}.content h1{font-size:30px;margin:8px 0}.muted{font-size:12px;color:#849089}.panel{background:white;border:1px solid #e7ece5;border-radius:12px;padding:22px;margin:16px 0;box-shadow:0 6px 24px #243a2b08}.filters{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:12px;align-items:end}.filters label{display:grid;gap:7px;font-size:11px;font-weight:700;color:#526158}.filters input,.filters select{min-width:0;border:1px solid #dfe7dd;border-radius:6px;padding:11px;background:#fff}.filters button{border:0;border-radius:7px;background:#a9d85d;padding:12px 16px;font-weight:800;cursor:pointer}.filters button:disabled{opacity:.5}.panel h2{font-size:16px;margin:22px 0 12px}.slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}.slot{display:grid;gap:8px;text-align:left;background:#fbfdf8;border:1px solid #dce8d2;border-radius:8px;padding:13px;cursor:pointer;color:#20352b}.slot:hover{border-color:#a9d85d}.slot span{font-size:13px;color:#567d2d}.slot small{font-size:10px;color:#849089}.light{border:1px solid #dce5d9;border-radius:7px;background:white;padding:9px 13px;color:#526158;cursor:pointer;margin-left:10px}.history-head{display:flex;justify-content:space-between;align-items:center}.history-head h2{margin:0}.history-head p{margin:5px 0}.table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;font-size:12px}th,td{text-align:left;padding:13px 10px;border-bottom:1px solid #edf0eb;white-space:nowrap}th{font-size:9px;color:#849089;letter-spacing:.8px}.status{background:#fff4df;color:#9b711c;border-radius:20px;padding:5px 9px;font-size:10px}.cancelled{background:#fff0ed;color:#a0493d}.empty{padding:18px;color:#849089;font-size:12px}.alert{padding:11px;border-radius:7px;margin:12px 0;font-size:12px}.error{background:#fff0ed;color:#a0493d}.success{background:#eef8df;color:#476c24}@media(max-width:700px){.page{padding:0 14px 30px}.content{margin:28px auto}.content h1{font-size:25px}.filters{grid-template-columns:1fr 1fr}.filters label:first-child,.filters button{grid-column:1/-1}.panel{padding:16px}}`]})
+@Component({
+  standalone: true,
+  selector: 'app-cliente-turnos',
+  imports: [CommonModule, ReactiveFormsModule],
+  templateUrl: './cliente-turnos.html',
+  styleUrl: './cliente-turnos.css',
+})
+/** Pantalla del cliente: busca disponibilidad y permite solicitar sus propios turnos. */
 export class ClienteTurnosPage implements OnInit {
-  private readonly api=inject(TurnosApiService);private readonly fb=inject(FormBuilder);private readonly router=inject(Router);readonly auth=inject(AuthService);
-  readonly today=this.dateKey(new Date());readonly canchas=signal<Cancha[]>([]);readonly horarios=signal<HorarioDisponible[]>([]);readonly reservas=signal<Reserva[]>([]);readonly loading=signal(false);readonly solicitando=signal(false);readonly cargandoCanchas=signal(true);readonly cargandoReservas=signal(true);readonly busquedaRealizada=signal(false);readonly error=signal('');readonly notice=signal('');
-  readonly form=this.fb.nonNullable.group({canchaId:[null as number|null,Validators.required],fecha:[this.today,Validators.required],duracionHoras:[1,Validators.required]});
-  ngOnInit():void{this.api.canchas().pipe(timeout(15000),finalize(()=>this.cargandoCanchas.set(false))).subscribe({next:list=>{const active=list.filter(c=>c.activa);this.canchas.set(active);if(active.length)this.form.controls.canchaId.setValue(active[0].id);},error:e=>this.error.set(this.message(e))});this.cargarReservas();}
-  buscar():void{this.form.markAllAsTouched();if(this.form.invalid)return;const{canchaId,fecha,duracionHoras}=this.form.getRawValue();if(canchaId===null)return;this.loading.set(true);this.error.set('');this.busquedaRealizada.set(true);this.api.disponibilidad(canchaId,fecha,duracionHoras).pipe(timeout(15000),finalize(()=>this.loading.set(false))).subscribe({next:x=>this.horarios.set(x),error:e=>this.error.set(this.message(e))});}
-  solicitar(s:HorarioDisponible):void{const{canchaId,fecha}=this.form.getRawValue();if(canchaId===null)return;this.solicitando.set(true);this.error.set('');this.api.solicitarTurno({canchaId,fecha,horaInicio:s.horaInicio,horaFin:s.horaFin}).pipe(timeout(15000),finalize(()=>this.solicitando.set(false))).subscribe({next:()=>{this.notice.set('Solicitud enviada. Ya aparece en tus turnos.');this.buscar();this.cargarReservas();},error:e=>{this.error.set(this.message(e));this.buscar();}});}
-  cargarReservas():void{this.cargandoReservas.set(true);this.api.misReservas().pipe(timeout(15000),finalize(()=>this.cargandoReservas.set(false))).subscribe({next:x=>this.reservas.set(x),error:e=>this.error.set(this.message(e))});}
-  logout():void{this.auth.logout();void this.router.navigateByUrl('/login');}
-  private message(error:unknown):string{if(error instanceof TimeoutError)return'El servidor tardó más de 15 segundos. Verificá que el backend esté levantado y probá de nuevo.';const e=error as HttpErrorResponse;return e.status===0?'No se pudo conectar con el servidor.':e.status===409?'Ese horario acaba de ocuparse. Elegí otro horario.':e.error?.error??e.error?.message??'Ocurrió un error. Intentá nuevamente.';}
-  private dateKey(d:Date):string{const local=new Date(d.getTime()-d.getTimezoneOffset()*60000);return local.toISOString().slice(0,10);}
+  private readonly api = inject(TurnosApiService);
+  private readonly fb = inject(FormBuilder);
+  private readonly router = inject(Router);
+  readonly auth = inject(AuthService);
+  // Signals representan datos visibles y estados de carga/error para la plantilla.
+  readonly today = this.dateKey(new Date());
+  readonly canchas = signal<Cancha[]>([]);
+  readonly horarios = signal<HorarioDisponible[]>([]);
+  readonly reservas = signal<Reserva[]>([]);
+  readonly loading = signal(false);
+  readonly solicitando = signal(false);
+  readonly cargandoCanchas = signal(true);
+  readonly cargandoReservas = signal(true);
+  readonly busquedaRealizada = signal(false);
+  readonly error = signal('');
+  readonly notice = signal('');
+  readonly form = this.fb.nonNullable.group({
+    canchaId: [null as number | null, Validators.required],
+    fecha: [this.today, Validators.required],
+    duracionHoras: [1, Validators.required],
+  });
+  ngOnInit(): void {
+    this.api
+      .canchas()
+      .pipe(
+        timeout(15000),
+        finalize(() => this.cargandoCanchas.set(false)),
+      )
+      .subscribe({
+        next: (list) => {
+          const active = list.filter((c) => c.activa);
+          this.canchas.set(active);
+          if (active.length) this.form.controls.canchaId.setValue(active[0].id);
+        },
+        error: (e) => this.error.set(this.message(e)),
+      });
+    this.cargarReservas();
+  }
+  // Valida filtros, consulta el servicio y garantiza quitar el indicador al completar o fallar.
+  buscar(): void {
+    this.form.markAllAsTouched();
+    if (this.form.invalid) return;
+    const { canchaId, fecha, duracionHoras } = this.form.getRawValue();
+    if (canchaId === null) return;
+    this.loading.set(true);
+    this.error.set('');
+    this.busquedaRealizada.set(true);
+    this.api
+      .disponibilidad(canchaId, fecha, duracionHoras)
+      .pipe(
+        timeout(15000),
+        finalize(() => this.loading.set(false)),
+      )
+      .subscribe({
+        next: (x) => this.horarios.set(x),
+        error: (e) => this.error.set(this.message(e)),
+      });
+  }
+  solicitar(s: HorarioDisponible): void {
+    const { canchaId, fecha } = this.form.getRawValue();
+    if (canchaId === null) return;
+    this.solicitando.set(true);
+    this.error.set('');
+    this.api
+      .solicitarTurno({ canchaId, fecha, horaInicio: s.horaInicio, horaFin: s.horaFin })
+      .pipe(
+        timeout(15000),
+        finalize(() => this.solicitando.set(false)),
+      )
+      .subscribe({
+        next: () => {
+          this.notice.set('Solicitud enviada. Ya aparece en tus turnos.');
+          this.buscar();
+          this.cargarReservas();
+        },
+        error: (e) => {
+          this.error.set(this.message(e));
+          this.buscar();
+        },
+      });
+  }
+  cargarReservas(): void {
+    this.cargandoReservas.set(true);
+    this.api
+      .misReservas()
+      .pipe(
+        timeout(15000),
+        finalize(() => this.cargandoReservas.set(false)),
+      )
+      .subscribe({
+        next: (x) => this.reservas.set(x),
+        error: (e) => this.error.set(this.message(e)),
+      });
+  }
+  logout(): void {
+    this.auth.logout();
+    void this.router.navigateByUrl('/login');
+  }
+  private message(error: unknown): string {
+    if (error instanceof TimeoutError)
+      return 'El servidor tardó más de 15 segundos. Verificá que el backend esté levantado y probá de nuevo.';
+    const e = error as HttpErrorResponse;
+    return e.status === 0
+      ? 'No se pudo conectar con el servidor.'
+      : e.status === 409
+        ? 'Ese horario acaba de ocuparse. Elegí otro horario.'
+        : (e.error?.error ?? e.error?.message ?? 'Ocurrió un error. Intentá nuevamente.');
+  }
+  private dateKey(d: Date): string {
+    const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+    return local.toISOString().slice(0, 10);
+  }
 }

@@ -75,7 +75,14 @@
           "defaultConfiguration": "development"
         },
         "test": {
-          "builder": "@angular/build:unit-test"
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "coverageInclude": ["src/app/app.ts", "src/app/app.routes.ts", "src/app/core/**/*.ts", "src/app/pages/**/*.ts"],
+            "coverageExclude": ["src/app/**/*.spec.ts"],
+            "coverageThresholds": {
+              "lines": 80
+            }
+          }
         }
       }
     }

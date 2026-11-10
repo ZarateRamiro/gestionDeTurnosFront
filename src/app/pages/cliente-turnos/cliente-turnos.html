@@ -1,0 +1,116 @@
+<main class="page">
+  <!-- Encabezado con la sesión activa y la acción para cerrar sesión. -->
+  <header>
+    <a class="brand" href="/turnos"
+      ><b>PJ</b><span><strong>punto de juego</strong><small>RESERVAS DEPORTIVAS</small></span></a
+    >
+    <div>Hola, {{ auth.nombre() }} <button class="light" (click)="logout()">Salir</button></div>
+  </header>
+  <section class="content">
+    <span class="eyebrow">RESERVAS ONLINE</span>
+    <h1>Encontrá tu próximo turno</h1>
+    <p class="muted">Elegí cancha, fecha y duración para consultar los horarios disponibles.</p>
+    @if (error()) {
+      <div class="alert error" role="alert">{{ error() }}</div>
+    }
+    @if (notice()) {
+      <div class="alert success" role="status">{{ notice() }}</div>
+    }
+    <section class="panel">
+      <!-- El formulario reactivo recoge los filtros que necesita el endpoint de disponibilidad. -->
+      <form class="filters" [formGroup]="form" (ngSubmit)="buscar()">
+        <label
+          >Cancha<select formControlName="canchaId">
+            <option [ngValue]="null" disabled>Elegí una cancha</option>
+            @for (c of canchas(); track c.id) {
+              <option [ngValue]="c.id">
+                {{ c.nombre }} · &#36;{{ c.precioPorHora | number: '1.0-0' }}/hora
+              </option>
+            }
+          </select></label
+        ><label>Fecha<input type="date" formControlName="fecha" [min]="today" /></label
+        ><label
+          >Duración<select formControlName="duracionHoras">
+            <option [ngValue]="1">1 hora</option>
+            <option [ngValue]="2">2 horas</option>
+            <option [ngValue]="3">3 horas</option>
+          </select></label
+        ><button [disabled]="form.invalid || loading()">
+          {{ loading() ? 'Buscando…' : 'Ver horarios' }}
+        </button>
+      </form>
+      @if (cargandoCanchas()) {
+        <p class="empty">Cargando canchas…</p>
+      } @else if (!canchas().length) {
+        <p class="empty">
+          Todavía no hay canchas activas. El administrador debe cargar una cancha para habilitar
+          reservas.
+        </p>
+      }
+      @if (busquedaRealizada() && horarios().length) {
+        <!-- Cada botón representa un horario libre que el cliente puede solicitar. -->
+        <h2>Horarios disponibles</h2>
+        <div class="slots">
+          @for (s of horarios(); track s.horaInicio) {
+            <button class="slot" [disabled]="solicitando()" (click)="solicitar(s)">
+              <strong>{{ s.horaInicio.slice(0, 5) }} – {{ s.horaFin.slice(0, 5) }}</strong
+              ><span>&#36;{{ s.precioTotal | number: '1.0-0' }}</span
+              ><small>{{ solicitando() ? 'Enviando…' : 'Solicitar turno' }}</small>
+            </button>
+          }
+        </div>
+      }
+      @if (busquedaRealizada() && !horarios().length && !loading()) {
+        <p class="empty">No hay horarios libres. Probá otra fecha o duración.</p>
+      }
+    </section>
+    <!-- Historial consultado para el usuario autenticado. -->
+    <section class="panel">
+      <div class="history-head">
+        <div>
+          <h2>Mis turnos</h2>
+          <p class="muted">Solicitudes realizadas con tu cuenta.</p>
+        </div>
+        <button class="light" (click)="cargarReservas()">Actualizar</button>
+      </div>
+      @if (cargandoReservas()) {
+        <p class="empty">Cargando tus turnos…</p>
+      } @else if (!reservas().length) {
+        <p class="empty">Todavía no solicitaste ningún turno.</p>
+      } @else {
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>CANCHA</th>
+                <th>FECHA</th>
+                <th>HORARIO</th>
+                <th>IMPORTE</th>
+                <th>ESTADO</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of reservas(); track r.id) {
+                <tr>
+                  <td>{{ r.cancha }}</td>
+                  <td>{{ r.fecha }}</td>
+                  <td>{{ r.horaInicio.slice(0, 5) }} – {{ r.horaFin.slice(0, 5) }}</td>
+                  <td>&#36;{{ r.precioTotal | number: '1.0-0' }}</td>
+                  <td>
+                    <span class="status" [class.cancelled]="r.estado === 'CANCELADA'">{{
+                      r.estado === 'PENDIENTE'
+                        ? 'Pendiente'
+                        : r.estado === 'CONFIRMADA'
+                          ? 'Confirmado'
+                          : 'Cancelado'
+                    }}</span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  </section>
+</main>
